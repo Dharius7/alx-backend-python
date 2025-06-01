@@ -1,20 +1,11 @@
 #!/usr/bin/env python3
 import unittest
-from parameterized import parameterized
-from utils import access_nested_map
-import pytest
+from parameterized import parameterized, parameterized_class
+from unittest.mock import patch, Mock, PropertyMock
+from utils import access_nested_map, get_json, memoize
+from client import GithubOrgClient
+from fixtures import TEST_PAYLOAD
 
-class TestMyFunction:
-    @pytest.mark.parametrize(
-        "input_val, expected",
-        [
-            (1, 2),
-            (2, 3),
-            (3, 4),
-        ]
-    )
-    def test_increment(self, input_val, expected):
-        assert input_val + 1 == expected
 
 class TestAccessNestedMap(unittest.TestCase):
     @parameterized.expand([
@@ -34,8 +25,6 @@ class TestAccessNestedMap(unittest.TestCase):
             access_nested_map(nested_map, path)
         self.assertEqual(str(cm.exception), repr(path[-1]))
 
-from unittest.mock import patch, Mock
-from utils import get_json
 
 class TestGetJson(unittest.TestCase):
     @parameterized.expand([
@@ -48,7 +37,6 @@ class TestGetJson(unittest.TestCase):
         self.assertEqual(get_json(test_url), test_payload)
         mock_get.assert_called_once_with(test_url)
 
-from utils import memoize
 
 class TestMemoize(unittest.TestCase):
     def test_memoize(self):
@@ -66,12 +54,8 @@ class TestMemoize(unittest.TestCase):
             self.assertEqual(obj.a_property, 42)
             mock_method.assert_called_once()
 
-from client import GithubOrgClient
-from unittest import TestCase
-from unittest.mock import patch
-from parameterized import parameterized
 
-class TestGithubOrgClient(TestCase):
+class TestGithubOrgClient(unittest.TestCase):
     @parameterized.expand([
         ("google",),
         ("abc",),
@@ -84,24 +68,21 @@ class TestGithubOrgClient(TestCase):
         self.assertEqual(client.org, test_payload)
         mock_get_json.assert_called_once_with(f"https://api.github.com/orgs/{org_name}")
 
-from unittest.mock import patch, PropertyMock
-
     def test_public_repos_url(self):
         with patch("client.GithubOrgClient.org", new_callable=PropertyMock) as mock_org:
             mock_org.return_value = {"repos_url": "https://api.github.com/orgs/test/repos"}
             client = GithubOrgClient("test")
             self.assertEqual(client._public_repos_url, "https://api.github.com/orgs/test/repos")
 
-
-@patch("client.get_json")
-def test_public_repos(self, mock_get_json):
-    mock_get_json.return_value = [{"name": "repo1"}, {"name": "repo2"}]
-    with patch("client.GithubOrgClient._public_repos_url", new_callable=PropertyMock) as mock_url:
-        mock_url.return_value = "https://api.github.com/orgs/test/repos"
-        client = GithubOrgClient("test")
-        self.assertEqual(client.public_repos(), ["repo1", "repo2"])
-        mock_url.assert_called_once()
-        mock_get_json.assert_called_once()
+    @patch("client.get_json")
+    def test_public_repos(self, mock_get_json):
+        mock_get_json.return_value = [{"name": "repo1"}, {"name": "repo2"}]
+        with patch("client.GithubOrgClient._public_repos_url", new_callable=PropertyMock) as mock_url:
+            mock_url.return_value = "https://api.github.com/orgs/test/repos"
+            client = GithubOrgClient("test")
+            self.assertEqual(client.public_repos(), ["repo1", "repo2"])
+            mock_url.assert_called_once()
+            mock_get_json.assert_called_once()
 
     @parameterized.expand([
         ({"license": {"key": "my_license"}}, "my_license", True),
@@ -110,11 +91,6 @@ def test_public_repos(self, mock_get_json):
     def test_has_license(self, repo, license_key, expected):
         self.assertEqual(GithubOrgClient.has_license(repo, license_key), expected)
 
-import unittest
-from unittest.mock import patch, Mock
-from parameterized import parameterized_class
-from client import GithubOrgClient
-from fixtures import TEST_PAYLOAD
 
 @parameterized_class([
     {
