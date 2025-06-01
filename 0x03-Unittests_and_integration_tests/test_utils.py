@@ -2,6 +2,19 @@
 import unittest
 from parameterized import parameterized
 from utils import access_nested_map
+import pytest
+
+class TestMyFunction:
+    @pytest.mark.parametrize(
+        "input_val, expected",
+        [
+            (1, 2),
+            (2, 3),
+            (3, 4),
+        ]
+    )
+    def test_increment(self, input_val, expected):
+        assert input_val + 1 == expected
 
 class TestAccessNestedMap(unittest.TestCase):
     @parameterized.expand([
