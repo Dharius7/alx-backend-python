@@ -1,8 +1,11 @@
 from django.db import models
+
+# Create your models here.
+from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
-    # Add custom fields if needed
+    # Extend if needed
     pass
 
 class Conversation(models.Model):
